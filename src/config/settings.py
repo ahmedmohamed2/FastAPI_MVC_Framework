@@ -43,6 +43,20 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        """
+        Build a SQLAlchemy-compatible MySQL connection URL for PyMySQL.
+
+        URL-encodes username and password with ``quote_plus`` so special characters in
+        credentials do not break parsing. The scheme is ``mysql+pymysql`` to select the
+        PyMySQL driver with SQLAlchemy. Host, port, and database name are interpolated
+        from the corresponding settings fields.
+
+        Returns:
+            A single string suitable for ``sqlalchemy.create_engine``.
+
+        Note:
+            The password appears in the URL in encoded form; avoid logging this value.
+        """
         user = quote_plus(self.MYSQL_USER)
         password = quote_plus(self.MYSQL_PASSWORD)
         return (
@@ -52,7 +66,23 @@ class Settings(BaseSettings):
 
     @model_validator(mode='after')
     def generate_secret_key_if_missing(self):
-        """Generate a random secret key if not provided (for development only)"""
+        """
+        Pydantic ``model_validator`` that ensures ``SECRET_KEY`` is non-empty after load.
+
+        If ``SECRET_KEY`` is missing or blank in the environment / ``.env`` file,
+        assigns a cryptographically strong random 32-byte URL-safe string from
+        ``secrets.token_urlsafe(32)`` and emits a ``UserWarning`` reminding operators
+        that production must set an explicit stable secret. This runs once when the
+        ``Settings`` instance is constructed, before the module-level ``settings``
+        singleton is used by the app.
+
+        Returns:
+            ``self`` for validator chaining.
+
+        Warning:
+            Auto-generated keys change on every process restart and invalidate tokens;
+            set ``SECRET_KEY`` in production.
+        """
         if not self.SECRET_KEY:
             self.SECRET_KEY = secrets.token_urlsafe(32)
             warnings.warn(
@@ -65,10 +95,28 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        """Get CORS origins as a list from comma-separated string"""
+        """
+        Parse ``CORS_ORIGINS`` from a comma-separated env string into a list of origins.
+
+        Splits on commas and strips whitespace around each segment so values like
+        ``"https://a.com, https://b.com"`` become two clean origin strings. Empty
+        segments after strip are still included if present between commas; callers
+        configuring CORS middleware should ensure ``CORS_ORIGINS`` is well-formed.
+
+        Returns:
+            List of origin strings for use with Starlette/FastAPI CORSMiddleware.
+        """
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
     class Config:
+        """
+        Pydantic v1-style inner ``Config`` for ``BaseSettings`` loading behavior.
+
+        Points model construction at the project ``.env`` file with UTF-8 encoding and
+        preserves case sensitivity for environment variable names so ``MYSQL_HOST`` and
+        similar keys match exactly.
+        """
+
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
