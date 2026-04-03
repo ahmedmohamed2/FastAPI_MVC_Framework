@@ -26,9 +26,6 @@ class Settings(BaseSettings):
     SQL_SERVER_PASSWORD: str = ""  # Optional, not needed for Windows authentication
     SQL_SERVER_DRIVER: str
 
-    # Server Settings
-    HOST: str
-    PORT: int
 
     # Rate Limiting Settings
     RATE_LIMIT_ENABLED: bool = True
