@@ -5,7 +5,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from config.settings import settings
 from middleware.rate_limiter import limiter
-from routers import base
+from routers import base, users
 
 app = FastAPI()
 
@@ -33,3 +33,4 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 
 app.include_router(base.base_router)
+app.include_router(users.users_router, prefix=settings.API_PREFIX)

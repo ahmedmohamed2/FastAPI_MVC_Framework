@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import model_validator
 from typing import List, Optional
-from pathlib import Path
+from urllib.parse import quote_plus
 import secrets
 import warnings
 
@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # API Settings
     PROJECT_NAME: str
     APP_VERSION: str
+    API_PREFIX: str = "/api/v1"
 
     # CORS Settings (comma-separated string from .env)
     CORS_ORIGINS: str
@@ -33,6 +34,21 @@ class Settings(BaseSettings):
     OPENAI_API_URL: str = "https://api.openai.com/v1/chat/completions"
     OPENAI_MODEL: Optional[str] = None  # Must be set explicitly when using OpenAI
 
+    # MySQL / SQLAlchemy
+    MYSQL_HOST: str = "127.0.0.1"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_DATABASE: str = ""
+
+    @property
+    def database_url(self) -> str:
+        user = quote_plus(self.MYSQL_USER)
+        password = quote_plus(self.MYSQL_PASSWORD)
+        return (
+            f"mysql+pymysql://{user}:{password}"
+            f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+        )
 
     @model_validator(mode='after')
     def generate_secret_key_if_missing(self):
