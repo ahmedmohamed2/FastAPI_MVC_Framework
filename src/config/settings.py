@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # SQL Server Settings
     SQL_SERVER_HOST: str
-    SQL_SERVER_PORT: int
+    SQL_SERVER_PORT: str
     SQL_SERVER_DATABASE: str
     SQL_SERVER_AUTH_TYPE: str  # Options: "sql" or "windows"
     SQL_SERVER_USERNAME: str = ""  # Optional, not needed for Windows authentication
