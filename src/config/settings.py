@@ -14,18 +14,6 @@ class Settings(BaseSettings):
     # CORS Settings (comma-separated string from .env)
     CORS_ORIGINS: str
 
-    # Database Settings
-    DATABASE_URL: str
-
-    # SQL Server Settings
-    SQL_SERVER_HOST: str
-    SQL_SERVER_PORT: str
-    SQL_SERVER_DATABASE: str
-    SQL_SERVER_AUTH_TYPE: str  # Options: "sql" or "windows"
-    SQL_SERVER_USERNAME: str = ""  # Optional, not needed for Windows authentication
-    SQL_SERVER_PASSWORD: str = ""  # Optional, not needed for Windows authentication
-    SQL_SERVER_DRIVER: str
-
 
     # Rate Limiting Settings
     RATE_LIMIT_ENABLED: bool = True
@@ -45,9 +33,6 @@ class Settings(BaseSettings):
     OPENAI_API_URL: str = "https://api.openai.com/v1/chat/completions"
     OPENAI_MODEL: Optional[str] = None  # Must be set explicitly when using OpenAI
 
-    # MongoDB (optional – for scraped data counts)
-    MONGODB_URI: str
-    MONGODB_DATABASE: str
 
     @model_validator(mode='after')
     def generate_secret_key_if_missing(self):
