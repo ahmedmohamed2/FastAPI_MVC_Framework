@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic-settings
+slowapi
+bcrypt
+email-validator
+python-jose[cryptography]
+httpx
