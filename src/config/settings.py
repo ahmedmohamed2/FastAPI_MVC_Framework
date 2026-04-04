@@ -27,10 +27,22 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # AI provider: "openai" (cloud) or "local" (OpenAI-compatible endpoint, e.g. Ollama)
+    AI_PROVIDER: str = "openai"
+
     # OpenAI Settings
     OPENAI_API_KEY: str = ""
     OPENAI_API_URL: str = "https://api.openai.com/v1/chat/completions"
     OPENAI_MODEL: Optional[str] = None  # Must be set explicitly when using OpenAI
+
+    # Local: Ollama native chat (default) or OpenAI-compatible URL (…/v1/chat/completions)
+    LOCAL_MODEL_API_URL: str = "http://127.0.0.1:11434/api/chat"
+    LOCAL_MODEL_NAME: Optional[str] = None
+    LOCAL_MODEL_API_KEY: str = ""
+
+    # Shared chat completion defaults (used by both OpenAI and local services)
+    AI_TEMPERATURE: float = 0.0
+    AI_MAX_TOKENS: int = 4096
 
     # MySQL / SQLAlchemy
     MYSQL_HOST: str = "127.0.0.1"
