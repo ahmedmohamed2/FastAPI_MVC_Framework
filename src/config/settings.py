@@ -1,9 +1,7 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
-from pydantic import model_validator
 from typing import List, Optional
 from urllib.parse import quote_plus
-import secrets
-import warnings
 
 
 class Settings(BaseSettings):
@@ -24,8 +22,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_PUT: str = "50/minute"  # PUT requests limit
     RATE_LIMIT_DELETE: str = "50/minute"  # DELETE requests limit
 
-    # JWT Settings
-    SECRET_KEY: str = ""
+    # JWT Settings (SECRET_KEY must be set in .env — no default or auto-generation)
+    SECRET_KEY: str = Field(..., min_length=1)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
@@ -63,35 +61,6 @@ class Settings(BaseSettings):
             f"mysql+pymysql://{user}:{password}"
             f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
         )
-
-    @model_validator(mode='after')
-    def generate_secret_key_if_missing(self):
-        """
-        Pydantic ``model_validator`` that ensures ``SECRET_KEY`` is non-empty after load.
-
-        If ``SECRET_KEY`` is missing or blank in the environment / ``.env`` file,
-        assigns a cryptographically strong random 32-byte URL-safe string from
-        ``secrets.token_urlsafe(32)`` and emits a ``UserWarning`` reminding operators
-        that production must set an explicit stable secret. This runs once when the
-        ``Settings`` instance is constructed, before the module-level ``settings``
-        singleton is used by the app.
-
-        Returns:
-            ``self`` for validator chaining.
-
-        Warning:
-            Auto-generated keys change on every process restart and invalidate tokens;
-            set ``SECRET_KEY`` in production.
-        """
-        if not self.SECRET_KEY:
-            self.SECRET_KEY = secrets.token_urlsafe(32)
-            warnings.warn(
-                "SECRET_KEY not set in .env file. Using auto-generated key for development. "
-                "This should be set to a secure random string in production!",
-                UserWarning,
-                stacklevel=2
-            )
-        return self
 
     @property
     def cors_origins_list(self) -> List[str]:

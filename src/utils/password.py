@@ -20,3 +20,23 @@ def hash_password(password: str) -> str:
         ``password_hash``.
     """
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, password_hash: str) -> bool:
+    """
+    Verify a plaintext password against a stored bcrypt hash in constant time.
+
+    Delegates to ``bcrypt.checkpw``, which compares the candidate password to the hash
+    using a timing-safe implementation appropriate for authentication checks.
+
+    Args:
+        plain_password: Password supplied at login or similar.
+        password_hash: Value previously stored from ``hash_password``.
+
+    Returns:
+        ``True`` if the password matches; ``False`` otherwise.
+    """
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"),
+        password_hash.encode("utf-8"),
+    )
