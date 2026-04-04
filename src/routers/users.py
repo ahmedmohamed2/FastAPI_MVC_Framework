@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import Response
 
 from config.settings import settings
-from controllers.user_controller import UserController
+from controllers.user_controller import UserController, UsernameOrEmailExistsError
 from database.mysql_session import get_db
 from middleware.auth import get_current_user
 from enums.user_response_enum import UserResponseEnum
@@ -127,10 +127,16 @@ async def create_user(
     """
     HTTP POST handler for ``POST /users/`` creating a new user.
 
-    Requires a valid Bearer JWT. On unique constraint violation, returns 409 after rollback.
+    Requires a valid Bearer JWT. Duplicate username/email returns 409 without insert;
+    unique constraint violations (e.g. races) return 409 after rollback.
     """
     try:
         user = controller.create_user(payload)
+    except UsernameOrEmailExistsError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=UserResponseEnum.USERNAME_OR_EMAIL_ALREADY_EXISTS.value,
+        ) from None
     except IntegrityError:
         controller.db.rollback()
         raise HTTPException(

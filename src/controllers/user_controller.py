@@ -1,9 +1,13 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from models.user import User
 from schemas.user import UserCreate, UserUpdate
 from utils.password import hash_password
+
+
+class UsernameOrEmailExistsError(Exception):
+    """Raised when a create would duplicate an existing username or email."""
 
 
 class UserController:
@@ -88,6 +92,14 @@ class UserController:
         """
         return self._db.get(User, user_id)
 
+    def _user_exists_by_username_or_email(self, username: str, email: str) -> bool:
+        stmt = (
+            select(User.id)
+            .where(or_(User.username == username, User.email == email))
+            .limit(1)
+        )
+        return self._db.scalar(stmt) is not None
+
     def create_user(self, data: UserCreate) -> User:
         """
         Insert a new user record with a bcrypt-hashed password.
@@ -99,6 +111,11 @@ class UserController:
         and refreshed so server-generated fields (for example timestamps and id) are
         populated on the returned instance.
 
+        Before inserting, checks whether ``username`` or ``email`` is already taken so
+        duplicate requests avoid consuming ``AUTO_INCREMENT`` ids; concurrent creates
+        can still race, so unique constraints and ``IntegrityError`` handling remain
+        necessary.
+
         Args:
             data: Incoming create payload already validated by Pydantic (lengths,
                 email format, etc.).
@@ -107,13 +124,17 @@ class UserController:
             The persisted ``User`` instance after commit and refresh.
 
         Raises:
+            UsernameOrEmailExistsError: If ``username`` or ``email`` already exists.
             sqlalchemy.exc.IntegrityError: If ``username`` or ``email`` violates a
                 unique constraint; callers should roll back the session and map this to
                 an appropriate HTTP conflict response.
         """
+        email_str = str(data.email)
+        if self._user_exists_by_username_or_email(data.username, email_str):
+            raise UsernameOrEmailExistsError
         user = User(
             username=data.username,
-            email=str(data.email),
+            email=email_str,
             password_hash=hash_password(data.password),
             first_name=data.first_name,
             last_name=data.last_name,
